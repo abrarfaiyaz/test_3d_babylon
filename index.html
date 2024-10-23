@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load 3D Mesh</title>
+    <style>
+        #button-container {
+            margin: 10px;
+        }
+        #load-mesh {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Button container -->
+    <div id="button-container">
+        <!-- Button to upload JSON file -->
+        <input type="file" id="upload-mesh" accept=".json">
+        <!-- Button to load the 3D mesh -->
+        <button id="load-mesh">Load 3D Mesh</button>
+    </div>
+
+    <!-- Babylon.js Scene Container -->
+    <canvas id="renderCanvas"></canvas>
+
+    <!-- Include Babylon.js CDN -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+    <!-- Custom Script -->
+    <script>
+        let scene, engine, customMesh, meshData;
+
+        // Initialize Babylon.js Scene and Engine
+        window.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('renderCanvas');
+            engine = new BABYLON.Engine(canvas, true);
+
+            scene = new BABYLON.Scene(engine);
+            const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 2, 2, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+
+            const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
+            light.intensity = 0.7;
+
+            engine.runRenderLoop(function() {
+                scene.render();
+            });
+
+            window.addEventListener('resize', function() {
+                engine.resize();
+            });
+        });
+
+        // Upload and read the JSON file
+        document.getElementById('upload-mesh').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    meshData = JSON.parse(e.target.result);
+                    alert("File uploaded successfully!");
+                } catch (error) {
+                    alert("Error parsing JSON file!");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Load the 3D mesh when the button is clicked
+        document.getElementById('load-mesh').addEventListener('click', function() {
+            if (meshData) {
+                // Extract vertices and faces from the JSON file
+                const vertices = meshData.vertices.flat(); // Flatten the vertices array
+                const faces = meshData.faces.flat(); // Flatten the faces array
+
+                // Create a new mesh in Babylon.js
+                customMesh = new BABYLON.Mesh("custom", scene);
+                const vertexData = new BABYLON.VertexData();
+
+                vertexData.positions = vertices;
+                vertexData.indices = faces;
+
+                // Apply vertex data to the mesh
+                vertexData.applyToMesh(customMesh);
+
+                // Set material or transparency
+                const material = new BABYLON.StandardMaterial("material", scene);
+                material.alpha = 0.5; // Set transparency
+                customMesh.material = material;
+
+                alert("Mesh loaded successfully!");
+            } else {
+                alert("Please upload a valid JSON file first.");
+            }
+        });
+    </script>
+</body>
+</html>
