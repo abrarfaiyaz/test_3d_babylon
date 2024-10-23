@@ -8,8 +8,10 @@
         #button-container {
             margin: 10px;
         }
-        #load-mesh {
-            margin-right: 10px;
+        #renderCanvas {
+            width: 100%;
+            height: 100vh; /* Full height of the viewport */
+            display: block;
         }
     </style>
 </head>
@@ -37,17 +39,24 @@
             const canvas = document.getElementById('renderCanvas');
             engine = new BABYLON.Engine(canvas, true);
 
+            // Create the scene
             scene = new BABYLON.Scene(engine);
-            const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 2, 2, BABYLON.Vector3.Zero(), scene);
+            
+            // Create a camera positioned at a good distance
+            const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
+            camera.wheelDeltaPercentage = 0.01;  // Adjust zoom sensitivity
 
+            // Add a light source
             const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
-            light.intensity = 0.7;
+            light.intensity = 0.8;
 
+            // Start the render loop
             engine.runRenderLoop(function() {
                 scene.render();
             });
 
+            // Resize the engine if the window is resized
             window.addEventListener('resize', function() {
                 engine.resize();
             });
@@ -60,7 +69,7 @@
             reader.onload = function(e) {
                 try {
                     meshData = JSON.parse(e.target.result);
-                    alert("File uploaded successfully!");
+                    alert("File uploaded and parsed successfully!");
                 } catch (error) {
                     alert("Error parsing JSON file!");
                 }
@@ -89,6 +98,14 @@
                 const material = new BABYLON.StandardMaterial("material", scene);
                 material.alpha = 0.5; // Set transparency
                 customMesh.material = material;
+
+                // Adjust camera radius or zoom based on mesh size
+                const boundingInfo = customMesh.getBoundingInfo();
+                const meshSize = boundingInfo.boundingBox.extendSizeWorld;
+                const maxDimension = Math.max(meshSize.x, meshSize.y, meshSize.z);
+
+                // Adjust camera distance based on the mesh size
+                scene.activeCamera.radius = maxDimension * 2;
 
                 alert("Mesh loaded successfully!");
             } else {
