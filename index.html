@@ -70,8 +70,10 @@
                 try {
                     meshData = JSON.parse(e.target.result);
                     alert("File uploaded and parsed successfully!");
+                    console.log(meshData); // Print the loaded mesh data for debugging
                 } catch (error) {
                     alert("Error parsing JSON file!");
+                    console.error("Parsing error:", error);
                 }
             };
             reader.readAsText(file);
@@ -83,6 +85,16 @@
                 // Extract vertices and faces from the JSON file
                 const vertices = meshData.vertices.flat(); // Flatten the vertices array
                 const faces = meshData.faces.flat(); // Flatten the faces array
+
+                // Check if vertices and faces are valid
+                if (vertices.length === 0 || faces.length === 0) {
+                    alert("The mesh data seems to be empty or incorrectly formatted.");
+                    console.error("Vertices or faces are missing:", vertices, faces);
+                    return;
+                }
+
+                console.log("Vertices:", vertices);
+                console.log("Faces:", faces);
 
                 // Create a new mesh in Babylon.js
                 customMesh = new BABYLON.Mesh("custom", scene);
