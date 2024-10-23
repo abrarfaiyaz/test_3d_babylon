@@ -3,101 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Load 3D Mesh</title>
-    <style>
-        #button-container {
-            margin: 10px;
-        }
-        #renderCanvas {
-            width: 100%;
-            height: 100vh; /* Full height of the viewport */
-            display: block;
-        }
-    </style>
+    <title>Babylon.js JSON Upload</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
 <body>
-    <!-- Button container -->
-    <div id="button-container">
-        <!-- Button to upload JSON file -->
-        <input type="file" id="upload-mesh" accept=".json">
-        <!-- Button to load the 3D mesh -->
-        <button id="load-mesh">Load 3D Mesh</button>
-    </div>
+    <canvas id="renderCanvas" style="width: 100%; height: 100%;"></canvas>
+    <input type="file" id="fileInput" style="display: none;" accept=".json"/>
+    <button id="uploadButton">Upload JSON</button>
 
-    <!-- Babylon.js Scene Container -->
-    <canvas id="renderCanvas"></canvas>
-
-    <!-- Include Babylon.js CDN -->
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-
-    <!-- Custom Script -->
     <script>
-        let scene, engine, customMesh, meshData;
+        // Create Babylon.js scene and engine
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+        const scene = new BABYLON.Scene(engine);
 
-        // Initialize Babylon.js Scene and Engine
-        window.addEventListener('DOMContentLoaded', function() {
-            const canvas = document.getElementById('renderCanvas');
-            engine = new BABYLON.Engine(canvas, true);
+        // Set up a camera
+        const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 10, new BABYLON.Vector3(0, 0, 0), scene);
+        camera.attachControl(canvas, true);
 
-            // Create the scene
-            scene = new BABYLON.Scene(engine);
-            
-            // Create a camera positioned at a good distance
-            const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 4, 20, BABYLON.Vector3.Zero(), scene);
-            camera.attachControl(canvas, true);
-            camera.wheelDeltaPercentage = 0.01;  // Adjust zoom sensitivity
+        // Add lighting
+        const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+        light.intensity = 1;
 
-            // Add a light source
-            const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
-            light.intensity = 0.8;
-
-            // Start the render loop
-            engine.runRenderLoop(function() {
-                scene.render();
-            });
-
-            // Resize the engine if the window is resized
-            window.addEventListener('resize', function() {
-                engine.resize();
-            });
-        });
-
-        // Upload and read the JSON file
-        document.getElementById('upload-mesh').addEventListener('change', function(event) {
+        // Function to handle file upload and parsing
+        function handleFileUpload(event) {
             const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    meshData = JSON.parse(e.target.result);
-                    alert("File uploaded and parsed successfully!");
-                    console.log(meshData); // Print the loaded mesh data for debugging
-                } catch (error) {
-                    alert("Error parsing JSON file!");
-                    console.error("Parsing error:", error);
-                }
-            };
-            reader.readAsText(file);
-        });
+            if (!file) return;
 
-        // Load the 3D mesh when the button is clicked
-        document.getElementById('load-mesh').addEventListener('click', function() {
-            if (meshData) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const contents = e.target.result;
+                const meshData = JSON.parse(contents);
+
                 // Extract vertices and faces from the JSON file
                 const vertices = meshData.vertices.flat(); // Flatten the vertices array
-                const faces = meshData.faces.flat(); // Flatten the faces array
-
-                // Check if vertices and faces are valid
-                if (vertices.length === 0 || faces.length === 0) {
-                    alert("The mesh data seems to be empty or incorrectly formatted.");
-                    console.error("Vertices or faces are missing:", vertices, faces);
-                    return;
-                }
-
-                console.log("Vertices:", vertices);
-                console.log("Faces:", faces);
+                const faces = meshData.faces.flat();       // Flatten the faces array
 
                 // Create a new mesh in Babylon.js
-                customMesh = new BABYLON.Mesh("custom", scene);
+                const customMesh = new BABYLON.Mesh("custom", scene);
                 const vertexData = new BABYLON.VertexData();
 
                 vertexData.positions = vertices;
@@ -106,24 +49,32 @@
                 // Apply vertex data to the mesh
                 vertexData.applyToMesh(customMesh);
 
-                // Set material or transparency
+                // Set material with transparency
                 const material = new BABYLON.StandardMaterial("material", scene);
                 material.alpha = 0.5; // Set transparency
+                material.diffuseColor = new BABYLON.Color3(0, 1, 0); // Green color for visibility
                 customMesh.material = material;
 
-                // Adjust camera radius or zoom based on mesh size
-                const boundingInfo = customMesh.getBoundingInfo();
-                const meshSize = boundingInfo.boundingBox.extendSizeWorld;
-                const maxDimension = Math.max(meshSize.x, meshSize.y, meshSize.z);
+                // Optionally scale and position the mesh
+                customMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
+                customMesh.position = new BABYLON.Vector3(0, 0, 0);
 
-                // Adjust camera distance based on the mesh size
-                scene.activeCamera.radius = maxDimension * 2;
+                // Render loop
+                engine.runRenderLoop(function () {
+                    scene.render();
+                });
+            };
 
-                alert("Mesh loaded successfully!");
-            } else {
-                alert("Please upload a valid JSON file first.");
-            }
+            reader.readAsText(file); // Read the JSON file as text
+        }
+
+        // Trigger the file input when the button is clicked
+        document.getElementById("uploadButton").addEventListener("click", function() {
+            document.getElementById("fileInput").click();
         });
+
+        // Handle file input change event (file selection)
+        document.getElementById("fileInput").addEventListener("change", handleFileUpload);
     </script>
 </body>
 </html>
